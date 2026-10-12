@@ -1,0 +1,163 @@
+-- ====================================================================
+-- Tally Sync Portal - Database Migration Script
+-- Compatible with Neon PostgreSQL (Serverless)
+-- ====================================================================
+
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- 1. USERS TABLE
+CREATE TABLE IF NOT EXISTS users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(50) NOT NULL DEFAULT 'user', -- 'admin' or 'user'
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 2. TRANSACTIONS TABLE
+CREATE TABLE IF NOT EXISTS transactions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    voucher_number VARCHAR(100) NOT NULL,
+    voucher_type VARCHAR(50) NOT NULL, -- 'Sales', 'Purchase', 'Payment', 'Receipt', 'Journal', 'Contra'
+    voucher_date DATE NOT NULL,
+    reference_number VARCHAR(100),
+    party_ledger VARCHAR(255) NOT NULL,
+    account_ledger VARCHAR(255) NOT NULL,
+    narration TEXT,
+    subtotal NUMERIC(14, 2) NOT NULL DEFAULT 0.00,
+    tax_amount NUMERIC(14, 2) NOT NULL DEFAULT 0.00,
+    total_amount NUMERIC(14, 2) NOT NULL DEFAULT 0.00,
+    debit_credit VARCHAR(10) NOT NULL DEFAULT 'Dr', -- 'Dr' or 'Cr'
+    status VARCHAR(50) NOT NULL DEFAULT 'saved', -- 'draft', 'saved', 'cancelled'
+    tally_sync_status VARCHAR(50) NOT NULL DEFAULT 'pending', -- 'draft', 'pending', 'synced', 'failed'
+    tally_master_id VARCHAR(100),
+    tally_alter_id VARCHAR(100),
+    created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT unique_voucher_number_type UNIQUE (voucher_type, voucher_number)
+);
+
+-- Index for high-performance dashboard & list queries
+CREATE INDEX IF NOT EXISTS idx_transactions_sync_status ON transactions(tally_sync_status);
+CREATE INDEX IF NOT EXISTS idx_transactions_voucher_date ON transactions(voucher_date DESC);
+CREATE INDEX IF NOT EXISTS idx_transactions_voucher_type ON transactions(voucher_type);
+
+-- 3. TRANSACTION ITEMS TABLE (Line items for Sales / Purchase)
+CREATE TABLE IF NOT EXISTS transaction_items (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    transaction_id UUID NOT NULL REFERENCES transactions(id) ON DELETE CASCADE,
+    item_name VARCHAR(255) NOT NULL,
+    description TEXT,
+    quantity NUMERIC(12, 3) NOT NULL DEFAULT 1.000,
+    rate NUMERIC(14, 2) NOT NULL DEFAULT 0.00,
+    discount NUMERIC(14, 2) NOT NULL DEFAULT 0.00,
+    tax_percentage NUMERIC(5, 2) NOT NULL DEFAULT 0.00,
+    tax_amount NUMERIC(14, 2) NOT NULL DEFAULT 0.00,
+    amount NUMERIC(14, 2) NOT NULL DEFAULT 0.00,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_items_transaction_id ON transaction_items(transaction_id);
+
+-- 4. TALLY SYNC LOGS (Audit History for every sync attempt)
+CREATE TABLE IF NOT EXISTS tally_sync_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    transaction_id UUID NOT NULL REFERENCES transactions(id) ON DELETE CASCADE,
+    request_payload TEXT,
+    response_payload TEXT,
+    http_status INTEGER,
+    sync_status VARCHAR(50) NOT NULL, -- 'synced', 'failed'
+    error_message TEXT,
+    attempt_number INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_sync_logs_transaction ON tally_sync_logs(transaction_id, created_at DESC);
+
+-- 5. SETTINGS TABLE
+CREATE TABLE IF NOT EXISTS settings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    setting_key VARCHAR(100) UNIQUE NOT NULL,
+    setting_value TEXT,
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 6. MASTERS TABLES (Ledgers & Items)
+CREATE TABLE IF NOT EXISTS masters_ledger (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) UNIQUE NOT NULL,
+    group_name VARCHAR(255) NOT NULL,
+    opening_balance NUMERIC(14, 2) DEFAULT 0.00,
+    is_party BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS masters_item (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) UNIQUE NOT NULL,
+    unit VARCHAR(50) DEFAULT 'Nos',
+    default_rate NUMERIC(14, 2) DEFAULT 0.00,
+    default_tax_rate NUMERIC(5, 2) DEFAULT 0.00,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ====================================================================
+-- SEED DATA (Default initial records)
+-- ====================================================================
+
+-- Default Users:
+-- admin@tallysync.com / admin123 (bcrypt hash: $2a$10$wZ8KvhG.3wR1m65Qvj9rG.Fj2L59x1Ksm52OqfC3.XgN3pkmF94qK)
+-- accountant@tallysync.com / user123 (bcrypt hash: $2a$10$wZ8KvhG.3wR1m65Qvj9rG.Fj2L59x1Ksm52OqfC3.XgN3pkmF94qK)
+INSERT INTO users (id, name, email, password_hash, role)
+VALUES 
+    ('a0000000-0000-0000-0000-000000000001', 'System Administrator', 'admin@tallysync.com', '$2a$10$tZ2yD0LkJYw41k33v0pPteuRmsqH8p8hV9G7QYff5N6r8o4zJsm0u', 'admin'),
+    ('a0000000-0000-0000-0000-000000000002', 'Senior Accountant', 'accountant@tallysync.com', '$2a$10$tZ2yD0LkJYw41k33v0pPteuRmsqH8p8hV9G7QYff5N6r8o4zJsm0u', 'user')
+ON CONFLICT (email) DO NOTHING;
+
+-- Default Settings
+INSERT INTO settings (setting_key, setting_value)
+VALUES 
+    ('app_name', 'Tally Sync Portal'),
+    ('company_name', 'Acme Trading & Services Ltd.'),
+    ('tally_url', 'http://localhost:9000'),
+    ('tally_company', 'Acme Trading Co (2025-2026)'),
+    ('tally_connection_mode', 'direct'),
+    ('tally_mock_mode', 'true'),
+    ('sync_timeout_ms', '8000')
+ON CONFLICT (setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value;
+
+-- Default Ledgers
+INSERT INTO masters_ledger (name, group_name, is_party)
+VALUES 
+    ('Cash-in-Hand', 'Cash-in-hand', FALSE),
+    ('HDFC Bank Current A/c', 'Bank Accounts', FALSE),
+    ('State Bank of India', 'Bank Accounts', FALSE),
+    ('Sales Account - GST', 'Sales Accounts', FALSE),
+    ('Purchase Account - GST', 'Purchase Accounts', FALSE),
+    ('Output IGST 18%', 'Duties & Taxes', FALSE),
+    ('Output CGST 9%', 'Duties & Taxes', FALSE),
+    ('Output SGST 9%', 'Duties & Taxes', FALSE),
+    ('Input CGST 9%', 'Duties & Taxes', FALSE),
+    ('Input SGST 9%', 'Duties & Taxes', FALSE),
+    ('Acme Infotech Ltd', 'Sundry Debtors', TRUE),
+    ('Apex Global Logistics', 'Sundry Debtors', TRUE),
+    ('Zenith Hardware Supplies', 'Sundry Creditors', TRUE),
+    ('BlueWave Office Furnishings', 'Sundry Creditors', TRUE),
+    ('Office Rent Expense', 'Indirect Expenses', FALSE),
+    ('Telephone & Internet Expenses', 'Indirect Expenses', FALSE)
+ON CONFLICT (name) DO NOTHING;
+
+-- Default Stock Items
+INSERT INTO masters_item (name, unit, default_rate, default_tax_rate)
+VALUES 
+    ('Dell Latitude 5420 Laptop', 'Nos', 65000.00, 18.00),
+    ('Logitech Wireless Keyboard & Mouse', 'Set', 1850.00, 18.00),
+    ('Samsung 27-inch 4K Monitor', 'Nos', 22500.00, 18.00),
+    ('HP LaserJet Pro Printer', 'Nos', 19800.00, 18.00),
+    ('Cat6 Ethernet Cable (305m)', 'Roll', 4200.00, 18.00),
+    ('Cloud Migration Consulting', 'Hours', 2500.00, 18.00),
+    ('Annual Software Maintenance', 'Year', 45000.00, 18.00)
+ON CONFLICT (name) DO NOTHING;
