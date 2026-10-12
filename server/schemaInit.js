@@ -156,9 +156,9 @@ export function ensureDatabaseSchema() {
       await query(`
         INSERT INTO users (id, name, email, password_hash, role)
         VALUES 
-          ('a0000000-0000-0000-0000-000000000001', 'System Administrator', 'admin@tallysync.com', '$2a$10$tZ2yD0LkJYw41k33v0pPteuRmsqH8p8hV9G7QYff5N6r8o4zJsm0u', 'admin'),
-          ('a0000000-0000-0000-0000-000000000002', 'Senior Accountant', 'accountant@tallysync.com', '$2a$10$tZ2yD0LkJYw41k33v0pPteuRmsqH8p8hV9G7QYff5N6r8o4zJsm0u', 'user')
-        ON CONFLICT (email) DO NOTHING;
+          ('a0000000-0000-0000-0000-000000000001', 'System Administrator', 'admin@tallysync.com', '$2a$10$Mc3M4m4AAKoHJ9DO5I7RQ.dogs.rKn36EWvf8uIykz.ERwSXvRi9e', 'admin'),
+          ('a0000000-0000-0000-0000-000000000002', 'Senior Accountant', 'accountant@tallysync.com', '$2a$10$GDXpkj1pPz8aKm3Z/OWdFuKdzAHH37NzaOBfK1ydMuVfd2Kx/ja0W', 'user')
+        ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash;
       `);
 
       const companyName = process.env.TALLY_COMPANY || 'DhanaLakshmi & Co';

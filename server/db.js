@@ -12,7 +12,7 @@ const memStore = {
       id: 'a0000000-0000-0000-0000-000000000001',
       name: 'System Administrator',
       email: 'admin@tallysync.com',
-      password_hash: '$2a$10$wZ8KvhG.3wR1m65Qvj9rG.Fj2L59x1Ksm52OqfC3.XgN3pkmF94qK', // admin123
+      password_hash: '$2a$10$Mc3M4m4AAKoHJ9DO5I7RQ.dogs.rKn36EWvf8uIykz.ERwSXvRi9e', // admin123
       role: 'admin',
       created_at: new Date().toISOString(),
     },
@@ -20,7 +20,7 @@ const memStore = {
       id: 'a0000000-0000-0000-0000-000000000002',
       name: 'Senior Accountant',
       email: 'accountant@tallysync.com',
-      password_hash: '$2a$10$wZ8KvhG.3wR1m65Qvj9rG.Fj2L59x1Ksm52OqfC3.XgN3pkmF94qK', // user123
+      password_hash: '$2a$10$GDXpkj1pPz8aKm3Z/OWdFuKdzAHH37NzaOBfK1ydMuVfd2Kx/ja0W', // user123
       role: 'user',
       created_at: new Date().toISOString(),
     },
