@@ -28,6 +28,28 @@ export function ensureDatabaseSchema() {
           );
         `);
         if (txCheck.rows[0]?.exists) {
+          // If transactions table exists but is empty, seed initial sample records
+          const countRes = await query('SELECT count(*)::int as count FROM transactions');
+          if (countRes.rows[0]?.count === 0) {
+            await query(`
+              INSERT INTO transactions (
+                id, voucher_number, voucher_type, voucher_date, reference_number,
+                party_ledger, account_ledger, narration, subtotal, tax_amount,
+                total_amount, debit_credit, status, tally_sync_status, tally_master_id
+              ) VALUES 
+                ('b0000000-0000-0000-0000-000000000001', 'INV-2026-1001', 'Sales', CURRENT_DATE, 'PO-9821', 'Acme Infotech Ltd', 'Sales Account - GST', 'Consulting services & hardware peripherals', 66850, 12033, 78883, 'Dr', 'saved', 'synced', 'M-10042'),
+                ('b0000000-0000-0000-0000-000000000002', 'PUR-2026-1002', 'Purchase', CURRENT_DATE, 'BILL-4410', 'Zenith Hardware Supplies', 'Purchase Account - GST', 'Office IT inventory replenishment', 130000, 23400, 153400, 'Cr', 'saved', 'pending', NULL)
+              ON CONFLICT DO NOTHING;
+            `);
+
+            await query(`
+              INSERT INTO transaction_items (transaction_id, item_name, quantity, rate, tax_percentage, amount)
+              VALUES 
+                ('b0000000-0000-0000-0000-000000000001', 'Dell Latitude 5420 Laptop', 1, 65000, 18, 76700),
+                ('b0000000-0000-0000-0000-000000000002', 'HP LaserJet Pro Printer', 5, 26000, 18, 153400)
+              ON CONFLICT DO NOTHING;
+            `);
+          }
           isInitialized = true;
           return true;
         }
@@ -208,6 +230,29 @@ export function ensureDatabaseSchema() {
           ('HP LaserJet Pro Printer', 'Nos', 19800.00, 18.00)
         ON CONFLICT (name) DO NOTHING;
       `);
+
+      // Seed default transactions if table is empty
+      const txCheck = await query('SELECT count(*)::int as count FROM transactions');
+      if (txCheck.rows[0]?.count === 0) {
+        await query(`
+          INSERT INTO transactions (
+            id, voucher_number, voucher_type, voucher_date, reference_number,
+            party_ledger, account_ledger, narration, subtotal, tax_amount,
+            total_amount, debit_credit, status, tally_sync_status, tally_master_id
+          ) VALUES 
+            ('b0000000-0000-0000-0000-000000000001', 'INV-2026-1001', 'Sales', CURRENT_DATE, 'PO-9821', 'Acme Infotech Ltd', 'Sales Account - GST', 'Consulting services & hardware peripherals', 66850, 12033, 78883, 'Dr', 'saved', 'synced', 'M-10042'),
+            ('b0000000-0000-0000-0000-000000000002', 'PUR-2026-1002', 'Purchase', CURRENT_DATE, 'BILL-4410', 'Zenith Hardware Supplies', 'Purchase Account - GST', 'Office IT inventory replenishment', 130000, 23400, 153400, 'Cr', 'saved', 'pending', NULL)
+          ON CONFLICT DO NOTHING;
+        `);
+
+        await query(`
+          INSERT INTO transaction_items (transaction_id, item_name, quantity, rate, tax_percentage, amount)
+          VALUES 
+            ('b0000000-0000-0000-0000-000000000001', 'Dell Latitude 5420 Laptop', 1, 65000, 18, 76700),
+            ('b0000000-0000-0000-0000-000000000002', 'HP LaserJet Pro Printer', 5, 26000, 18, 153400)
+          ON CONFLICT DO NOTHING;
+        `);
+      }
 
       isInitialized = true;
       console.log('PostgreSQL schema initialized successfully with company:', companyName);

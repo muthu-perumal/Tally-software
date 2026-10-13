@@ -385,6 +385,12 @@ function queryMemory(text, params) {
         tx.tally_sync_status = params[0];
         if (params[1]) tx.tally_master_id = params[1];
         if (params[2]) tx.tally_alter_id = params[2];
+      } else if (sql.includes("tally_sync_status = 'synced'")) {
+        tx.tally_sync_status = 'synced';
+        tx.tally_master_id = params[0];
+        tx.tally_alter_id = params[1];
+      } else if (sql.includes("tally_sync_status = 'failed'")) {
+        tx.tally_sync_status = 'failed';
       } else if (sql.includes('voucher_number = $1')) {
         tx.voucher_number = params[0];
         tx.voucher_type = params[1];
