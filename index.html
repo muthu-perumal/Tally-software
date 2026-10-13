@@ -10,6 +10,54 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <style>
+      /* Suppress Netlify floating badges & drawers */
+      iframe[src*="netlify"],
+      iframe[id*="netlify"],
+      .netlify-badge,
+      [data-netlify-badge],
+      #netlify-badge,
+      netlify-drawer,
+      [data-netlify-drawer],
+      div:has(> a[href*="netlify.com"]),
+      div:has(> iframe[src*="netlify"]),
+      a[href*="netlify.com"][style*="position: fixed"],
+      a[href*="netlify.com"][style*="position:fixed"] {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        position: absolute !important;
+        z-index: -9999 !important;
+      }
+    </style>
+    <script>
+      (function () {
+        function removeNetlifyBadge() {
+          const targets = document.querySelectorAll(
+            'iframe[src*="netlify"], iframe[id*="netlify"], .netlify-badge, [data-netlify-badge], #netlify-badge, netlify-drawer, [data-netlify-drawer]'
+          );
+          targets.forEach((el) => el.remove());
+          document.querySelectorAll('a[href*="netlify.com"]').forEach((a) => {
+            const p = a.closest('div');
+            if (p && (window.getComputedStyle(p).position === 'fixed' || p.style.position === 'fixed')) {
+              p.remove();
+            } else if (window.getComputedStyle(a).position === 'fixed' || a.style.position === 'fixed') {
+              a.remove();
+            }
+          });
+        }
+        removeNetlifyBadge();
+        window.addEventListener('DOMContentLoaded', removeNetlifyBadge);
+        window.addEventListener('load', removeNetlifyBadge);
+        new MutationObserver(removeNetlifyBadge).observe(document.documentElement, {
+          childList: true,
+          subtree: true,
+        });
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -216,6 +216,14 @@ export default function MainLayout() {
         <main className="content-area">
           <Outlet context={{ companyName }} />
         </main>
+
+        <footer className="app-footer">
+          <div className="footer-content">
+            <span className="footer-copyright">© {new Date().getFullYear()} Tally Sync Portal</span>
+            <span className="footer-separator">•</span>
+            <span className="footer-powered">Powered By <strong>@Dhanalakshmi Muthu</strong></span>
+          </div>
+        </footer>
       </div>
     </div>
   );

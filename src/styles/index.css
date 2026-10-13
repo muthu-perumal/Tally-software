@@ -207,6 +207,7 @@ body {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 100vh;
 }
 
 /* Top Bar */
@@ -649,4 +650,54 @@ body {
   .main-wrapper {
     margin-left: 0;
   }
+}
+
+/* App Footer */
+.app-footer {
+  padding: 16px 28px;
+  background-color: var(--bg-card);
+  border-top: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: auto;
+}
+
+.footer-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.footer-separator {
+  color: #cbd5e1;
+}
+
+.footer-powered strong {
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+/* Suppress Netlify floating badges & drawers */
+iframe[src*="netlify"],
+iframe[id*="netlify"],
+.netlify-badge,
+[data-netlify-badge],
+#netlify-badge,
+netlify-drawer,
+[data-netlify-drawer],
+div:has(> a[href*="netlify.com"]),
+div:has(> iframe[src*="netlify"]),
+a[href*="netlify.com"][style*="position: fixed"],
+a[href*="netlify.com"][style*="position:fixed"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  position: absolute !important;
+  z-index: -9999 !important;
 }

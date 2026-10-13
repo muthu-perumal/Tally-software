@@ -167,6 +167,10 @@ export default function Login() {
             </button>
           </div>
         </div>
+
+        <div style={{ marginTop: 24, textAlign: 'center', fontSize: 13, color: '#64748b' }}>
+          <span>Powered By <strong style={{ color: '#1e3a8a', fontWeight: 600 }}>@Dhanalakshmi Muthu</strong></span>
+        </div>
       </div>
     </div>
   );
