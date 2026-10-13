@@ -247,6 +247,8 @@ export default function NewEntry() {
   };
 
   const handleSubmit = async (saveAndSync = true, isDraft = false) => {
+    if (submitting) return;
+
     const vNum = formData.voucher_number?.trim() || generateRandomVoucherNumber(formData.voucher_type);
 
     if (!formData.party_ledger?.trim()) {
@@ -338,7 +340,16 @@ export default function NewEntry() {
         step: 'failed',
         message: `Error: ${err.message}`,
       });
-      addToast({ type: 'error', message: err.message || 'Failed to save transaction' });
+      if (err.message?.includes('already exists') || err.message?.includes('DUPLICATE_VOUCHER')) {
+        const nextVNum = generateRandomVoucherNumber(formData.voucher_type);
+        setFormData(prev => ({ ...prev, voucher_number: nextVNum }));
+        addToast({ 
+          type: 'error', 
+          message: `${err.message}. A new voucher number (${nextVNum}) has been generated for you. Click Save again to proceed.` 
+        });
+      } else {
+        addToast({ type: 'error', message: err.message || 'Failed to save transaction' });
+      }
     } finally {
       setSubmitting(false);
     }
@@ -482,13 +493,33 @@ export default function NewEntry() {
               <label className="form-label">
                 Voucher Number <span className="required">*</span>
               </label>
-              <input
-                type="text"
-                className="form-control"
-                value={formData.voucher_number}
-                onChange={(e) => setFormData({ ...formData, voucher_number: e.target.value })}
-                placeholder="e.g. INV-2026-001"
-              />
+              <div style={{ display: 'flex', gap: 6 }}>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={formData.voucher_number}
+                  onChange={(e) => setFormData({ ...formData, voucher_number: e.target.value })}
+                  placeholder="e.g. INV-2026-001"
+                  style={{ flex: 1 }}
+                />
+                {!isEditMode && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    title="Generate a new voucher number"
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        voucher_number: generateRandomVoucherNumber(prev.voucher_type),
+                      }))
+                    }
+                    style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '0 10px', whiteSpace: 'nowrap' }}
+                  >
+                    <RotateCw size={13} />
+                    <span>New #</span>
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="form-group">

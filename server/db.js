@@ -254,6 +254,25 @@ function queryMemory(text, params) {
     return { rows: [{ total: list.length }], rowCount: 1 };
   }
 
+  // Duplicate Voucher Number Check (must precede generic 'FROM transactions')
+  if (sql.includes('voucher_type = $1 AND voucher_number = $2') || 
+      (sql.includes('SELECT id FROM transactions') && sql.includes('voucher_type') && sql.includes('voucher_number'))) {
+    const vType = (params[0] || '').trim().toLowerCase();
+    const vNum = (params[1] || '').trim().toLowerCase();
+    const matches = memStore.transactions.filter(
+      t => (t.voucher_type || '').toLowerCase() === vType && (t.voucher_number || '').toLowerCase() === vNum
+    );
+    return { rows: matches, rowCount: matches.length };
+  }
+
+  // Pending Tally Sync queue
+  if (sql.includes("tally_sync_status = 'pending'")) {
+    const pending = memStore.transactions.filter(
+      t => t.tally_sync_status === 'pending' && t.status !== 'draft'
+    );
+    return { rows: pending, rowCount: pending.length };
+  }
+
   // Transactions: Detail by ID
   if (sql.includes('WHERE t.id = $1') || sql.includes('WHERE id = $1')) {
     const id = params[0];
@@ -359,11 +378,37 @@ function queryMemory(text, params) {
         tx.tally_sync_status = params[0];
         if (params[1]) tx.tally_master_id = params[1];
         if (params[2]) tx.tally_alter_id = params[2];
+      } else if (sql.includes('voucher_number = $1')) {
+        tx.voucher_number = params[0];
+        tx.voucher_type = params[1];
+        tx.voucher_date = params[2];
+        tx.reference_number = params[3];
+        tx.party_ledger = params[4];
+        tx.account_ledger = params[5];
+        tx.narration = params[6];
+        tx.subtotal = parseFloat(params[7]) || 0;
+        tx.tax_amount = parseFloat(params[8]) || 0;
+        tx.total_amount = parseFloat(params[9]) || 0;
+        tx.debit_credit = params[10];
       }
       tx.updated_at = new Date().toISOString();
       return { rows: [tx], rowCount: 1 };
     }
     return { rows: [], rowCount: 0 };
+  }
+
+  // Delete Transaction Items
+  if (sql.includes('DELETE FROM transaction_items WHERE transaction_id = $1')) {
+    const txId = params[0];
+    memStore.transaction_items = memStore.transaction_items.filter(it => it.transaction_id !== txId);
+    return { rows: [], rowCount: 1 };
+  }
+
+  // Delete Transaction
+  if (sql.includes('DELETE FROM transactions WHERE id = $1')) {
+    const id = params[0];
+    memStore.transactions = memStore.transactions.filter(t => t.id !== id);
+    return { rows: [], rowCount: 1 };
   }
 
   return { rows: [], rowCount: 0 };
