@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  PlusCircle, 
-  Receipt, 
-  Database, 
-  RefreshCw, 
-  Settings as SettingsIcon, 
-  LogOut, 
-  Menu, 
+import {
+  LayoutDashboard,
+  PlusCircle,
+  Receipt,
+  Database,
+  RefreshCw,
+  Settings as SettingsIcon,
+  LogOut,
+  Menu,
   X,
   Server,
   Building2
@@ -131,8 +131,8 @@ export default function MainLayout() {
               <span className="sidebar-user-role">{user?.role || 'Admin'}</span>
             </div>
           </div>
-          <button 
-            onClick={handleLogout} 
+          <button
+            onClick={handleLogout}
             className="btn btn-secondary btn-sm"
             style={{ width: '100%', marginTop: 8, justifyContent: 'flex-start', background: '#1e293b', color: '#cbd5e1', borderColor: '#334155' }}
           >
@@ -146,8 +146,8 @@ export default function MainLayout() {
       <div className="main-wrapper">
         <header className="topbar">
           <div className="topbar-left">
-            <button 
-              className="btn btn-secondary btn-sm" 
+            <button
+              className="btn btn-secondary btn-sm"
               style={{ display: window.innerWidth <= 768 ? 'inline-flex' : 'none' }}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
@@ -160,7 +160,7 @@ export default function MainLayout() {
 
           <div className="topbar-right">
             {/* Active Company Name Pill */}
-            <div 
+            <div
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -180,30 +180,28 @@ export default function MainLayout() {
             </div>
 
             {/* Tally Connectivity Badge */}
-            <div 
-              className={`tally-status-pill ${
-                isMock ? 'mock' : isBridge ? 'bridge' : isOnline ? 'online' : 'offline'
-              }`}
+            <div
+              className={`tally-status-pill ${isMock ? 'mock' : isBridge ? 'bridge' : isOnline ? 'online' : 'offline'
+                }`}
               title={tallyStatus.health?.message || 'Tally Connection Status'}
             >
-              <div 
-                className={`status-dot ${
-                  isMock ? 'mock' : isBridge ? 'bridge' : isOnline ? 'online' : 'offline'
-                }`} 
+              <div
+                className={`status-dot ${isMock ? 'mock' : isBridge ? 'bridge' : isOnline ? 'online' : 'offline'
+                  }`}
               />
               <Server size={14} />
               <span>
-                {isMock 
-                  ? 'Tally Mock Mode' 
-                  : isBridge 
-                  ? 'Local Bridge Queue' 
-                  : isOnline 
-                  ? 'Tally Online' 
-                  : 'Tally Offline'}
+                {isMock
+                  ? 'Tally Mock Mode'
+                  : isBridge
+                    ? 'Local Bridge Queue'
+                    : isOnline
+                      ? 'Tally Online'
+                      : 'Tally Offline'}
               </span>
             </div>
 
-            <button 
+            <button
               className="btn btn-primary btn-sm"
               onClick={() => navigate('/entry')}
             >

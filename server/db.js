@@ -141,20 +141,27 @@ const memStore = {
   ],
 };
 
-function hasRealDatabase() {
-  const url = process.env.DATABASE_URL;
-  return Boolean(
+// Default Neon Serverless PostgreSQL connection for production deployment
+const NEON_DEFAULT_URL = 'postgresql://neondb_owner:npg_MKaJum9UD4Zr@ep-curly-cloud-b5z3bqr8-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
+
+function getDatabaseUrl() {
+  const url = process.env.DATABASE_URL || NEON_DEFAULT_URL;
+  if (
     url &&
     (url.startsWith('postgres://') || url.startsWith('postgresql://')) &&
     !url.includes('your_neon_postgresql_url')
-  );
+  ) {
+    return url;
+  }
+  return null;
 }
 
 export function getPool() {
-  if (!pool && hasRealDatabase()) {
+  const dbUrl = getDatabaseUrl();
+  if (!pool && dbUrl) {
     try {
       pool = new Pool({
-        connectionString: process.env.DATABASE_URL,
+        connectionString: dbUrl,
         ssl: true,
         max: 10,
         idleTimeoutMillis: 30000,

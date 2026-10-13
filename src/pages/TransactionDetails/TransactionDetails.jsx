@@ -64,11 +64,25 @@ export default function TransactionDetails() {
     }
   };
 
-  if (loading || !txData) {
+  if (loading) {
     return (
       <div style={{ padding: '60px 0', textAlign: 'center', color: '#64748b' }}>
         <RotateCw size={24} className="spin" style={{ margin: '0 auto 12px' }} />
         <p>Loading voucher details and sync history...</p>
+      </div>
+    );
+  }
+
+  if (!txData) {
+    return (
+      <div style={{ padding: '60px 0', textAlign: 'center', color: '#64748b' }}>
+        <AlertTriangle size={36} color="#ef4444" style={{ margin: '0 auto 12px' }} />
+        <h3 style={{ fontSize: 18, color: '#0f172a', marginBottom: 8 }}>Transaction Not Found</h3>
+        <p style={{ marginBottom: 20 }}>The requested voucher ID does not exist in the database.</p>
+        <button className="btn btn-primary btn-sm" onClick={() => navigate('/transactions')}>
+          <ArrowLeft size={14} />
+          <span>Back to Transactions</span>
+        </button>
       </div>
     );
   }
